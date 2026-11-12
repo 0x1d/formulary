@@ -1,0 +1,28 @@
+<!-- Agent notes. Copy to AGENTS.md at the workspace root or to projects/<project>/AGENTS.md. Keep it under one screen.
+     It points to documents and adds only what an agent cannot find there. It never restates the spec, DEV or the standard. -->
+
+# Agent notes
+
+## Read first
+
+- [Formulary](https://github.com/0x1d/formulary), section "For agents"
+- [<Project> index](<relative path to the project index>) -> component manifest -> documents
+- [Development](<relative path to development.md>) for setup and commands
+
+## Rules
+
+<!-- Rules specific to this workspace or project that are not in the standard. One line each. -->
+
+- <rule>
+
+## Before finishing
+
+<!-- The checks that must pass, as commands, or a link to the DEV section that lists them. -->
+
+- `<command>`
+
+## Do not touch
+
+<!-- Generated files, vendored code, anything with an owner elsewhere. Or delete the section. -->
+
+- <path> - <reason>
