@@ -3,7 +3,7 @@ id: <system>/<project>
 title: <Project>
 type: index
 owner: <system>
-standard: formulary/0.1
+standard: formulary/0.2
 date: YYYY-MM-DD
 ---
 

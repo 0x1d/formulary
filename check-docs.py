@@ -6,7 +6,7 @@ Usage:
   check-docs.py DIR ID_PREFIX       check one docs folder, e.g. docs home/sensor
 
 Checks: front matter fields, id equals path, relative links resolve,
-ids named in depends / related / documents / parent exist, plain ASCII text.
+ids named in depends / related / documents / includes / parent exist, plain ASCII text.
 """
 import pathlib
 import re
@@ -74,7 +74,7 @@ def main(argv):
     local = tuple(prefix + "/" for _, prefix in roots) + tuple(prefix for _, prefix in roots)
     for where, fm in docs:
         refs = []
-        for m in re.finditer(r"^\s*(?:depends|related|documents|implements): \[(.*)\]$", fm, re.M):
+        for m in re.finditer(r"^\s*(?:depends|related|documents|implements|includes): \[(.*)\]$", fm, re.M):
             refs += [r.strip() for r in m.group(1).split(",") if r.strip()]
         if field(fm, "parent"):
             refs.append(field(fm, "parent"))

@@ -26,7 +26,7 @@ R = required (at least one document of the type), O = optional (add it when it h
 - (4) Mapping between the external system's interface and ours: concepts, messages, errors, unsupported features.
 - (5) Only for checks that span projects. System requirements are otherwise traced to the component requirements that implement them. The system's documents are in `docs/` ([README.md](README.md#system-documents)).
 
-Four document types are outside the required sets: `DEV` (one per project), `INF` (system level), and the `AD` and `OI` logs (system level; a component keeps its own, in `decisions.md` and `open-items.md`, only for entries that affect nothing outside it). See [Document types](README.md#document-types).
+Five document types are outside the required sets: `DEV` (one per project), `INF` (system level), the `AD` and `OI` logs (system level; a component keeps its own, in `decisions.md` and `open-items.md`, only for entries that affect nothing outside it), and the product increments `PI` (system level; a project keeps its own only for increments that touch nothing outside it). See [Document types](README.md#document-types).
 
 ## Choosing a profile
 
@@ -46,4 +46,4 @@ A nested component (a module of another component, see [Modules](README.md#modul
 
 ## Applying the standard
 
-The mapping of a concrete system onto profiles (which projects it has, which components each contains, where their documents live) belongs to that system's own documents, in the repository layout or migration section of its `ARCH`, not here.
+The mapping of a concrete system onto profiles (which projects it has, which components each contains, where their documents live) belongs to that system's own documents, in the repository layout of its `ARCH` or, while the system is being moved onto the standard, in the `PI` that does it, not here.

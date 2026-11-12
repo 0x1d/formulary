@@ -1,6 +1,6 @@
 ---
 title: Formulary
-version: 0.1.0
+version: 0.2.0
 status: Draft
 date: 2026-11-12
 ---
@@ -15,6 +15,65 @@ Formulary is a standard for specifying a technical system and everything in it: 
 | [templates/](templates/) | One template per document type, plus the system manifest ([system.md](templates/system.md)), the project index ([project.md](templates/project.md)), the component manifest ([component.md](templates/component.md)) and the agent notes ([agents.md](templates/agents.md)) |
 | [check-docs.py](check-docs.py) | The conformance check |
 
+## Mental model
+
+A system is split into projects, and projects into components. Each component has a profile, and the profile decides which document types it needs. The documents depend on each other in a fixed order, from what and why down to how it is checked. Product increments change them, and code implements them.
+
+```mermaid
+flowchart TB
+    subgraph Structure["Structure: what is specified"]
+        direction LR
+        SYS["System<br/>docs/"] --> PRJ["Project<br/>projects/&lt;project&gt;/"]
+        SYS --> PKG["Package<br/>packages/&lt;package&gt;/"]
+        PRJ --> CMP["Component<br/>manifest README.md"]
+        PKG --> CMP
+        CMP -->|"has a"| PRF["Profile<br/>system, service, app, library,<br/>protocol, device, integration"]
+        CMP -.->|"module"| CMP
+    end
+
+    subgraph Spec["Specification: the source of truth"]
+        direction LR
+        REQ["REQ<br/>what and why"] --> ARCH["ARCH<br/>what it is made of"]
+        ARCH --> IFC["IFC<br/>how others talk to it"]
+        ARCH --> HW["HW<br/>what it runs on"]
+        IFC --> DES["DES / UX<br/>how it works, what the user sees"]
+        HW --> DES
+        DES --> SECOPS["SEC / OPS<br/>what can go wrong, how it runs"]
+        SECOPS --> VER["VER<br/>how we know"]
+        REQ -.->|"every requirement checked"| VER
+    end
+
+    subgraph Context["Around the specification"]
+        direction LR
+        AD["AD<br/>why it is this way"]
+        OI["OI<br/>what is unresolved"]
+        DEV["DEV<br/>how to work on it"]
+        INF["INF<br/>where it runs"]
+    end
+
+    subgraph Change["Change: how the system evolves"]
+        direction LR
+        PI["PI<br/>product increment"] -->|"groups"| PC["Planned changes P-NN<br/>slices, done when"]
+        PC -->|"depends"| PC
+    end
+
+    PRF -->|"fixes the required set"| Spec
+    Spec <-->|"rationale, questions"| Context
+    PC -->|"Planned sections"| Spec
+    OI -.->|"resolved by"| AD
+    OI -.->|"once specified"| PC
+    Spec -->|"implemented by"| CODE["Code and tests<br/>cite requirement ids"]
+    CODE -.->|"done: Planned -> descriptive"| PC
+```
+
+| Aspect | Holds | Where it is defined |
+| --- | --- | --- |
+| Structure | System, projects, packages, components and modules; each component's profile | [Workspace layout](#workspace-layout), [Modules](#modules), [profiles.md](profiles.md) |
+| Specification | The type documents of each component, read from `REQ` down to `VER`; a later one refines an earlier one and never contradicts it | [Document types](#document-types), [Workflow](#workflow) |
+| Around the specification | Decisions and open items, how to work on the code, the infrastructure it runs on | [Document types](#document-types) |
+| Change | Product increments and the planned changes in them; once built, a change is folded into the specification and leaves the graph | [Product increments](#product-increments), [Planned work](#planned-work) |
+| Relations | Every edge above that links documents is stated in front matter (`depends`, `related`, `planned`, `includes`) | [Front matter](#front-matter) |
+
 ## Terms
 
 | Term | Meaning |
@@ -27,6 +86,7 @@ Formulary is a standard for specifying a technical system and everything in it: 
 | **Profile** | The kind of component. It fixes which document types the component must have (its *required set*) |
 | **Document type** | A fixed kind of document with a code (`REQ`, `ARCH`, ...) and a template |
 | **Manifest** | The component's `README.md`: front matter stating id, profile, status, dependencies and documents |
+| **Product increment** | A set of features the system gains together. The system evolves through product increments; each is specified in a `PI` document before it is built ([Product increments](#product-increments)) |
 | **Item** | A numbered entry inside a document: requirement, decision, open item, interface message |
 
 ## Document types
@@ -46,22 +106,24 @@ Formulary is a standard for specifying a technical system and everything in it: 
 | `INF` | `infrastructure.md` | `infrastructure/` | Which hosts and networks carry it | [infrastructure.md](templates/infrastructure.md) |
 | `AD` | `decisions.md` | `decisions/` | Why it is this way | [decisions.md](templates/decisions.md) |
 | `OI` | `open-items.md` | `open-items/` | What is unresolved | [open-items.md](templates/open-items.md) |
+| `PI` | `increments.md` | `increments/` | How it evolves: which features it gains next | [increments.md](templates/increments.md), [increment.md](templates/increments/increment.md) |
 
 | Rule | Detail |
 | --- | --- |
 | One document per type | An owner has at most one document of each type, named after the type: `architecture.md`. While the subject fits in one file, that file is the whole document |
 | Sub-documents | When the document grows, parts move into sub-documents in the folder of the same name (`architecture/integration.md`). The type document keeps the summary and links every sub-document: it becomes their index. The folder exists only once there is a sub-document |
 | One level | Sub-documents have no sub-documents. A part that needs more is a module ([Modules](#modules)) |
-| Always split | `interfaces.md` and `hardware.md` are indexes from the start. Every interface contract and every board is a sub-document (`interfaces/http-api.md`, `hardware/<board>.md`), because each has its own version or data sheet and a second one is always possible |
+| Always split | `interfaces.md`, `hardware.md` and `increments.md` are indexes from the start. Every interface contract, every board and every product increment is a sub-document (`interfaces/http-api.md`, `hardware/<board>.md`, `increments/<increment>.md`), because each has its own version, data sheet or life span and a second one is always possible |
 | The code | `REQ`, `ARCH`, ... is the short name of the type. It is the `type` in front matter and is used in the profile tables and in text. It does not appear in ids or file names |
 
-**Scope.** `REQ` to `VER` belong to a component and form the required sets ([profiles](profiles.md)). The other four do not:
+**Scope.** `REQ` to `VER` belong to a component and form the required sets ([profiles](profiles.md)). The other five do not:
 
 | Code | Belongs to | Lives in |
 | --- | --- | --- |
 | `DEV` | A project, because tooling is per project. Required for every project | `projects/<project>/docs/development.md`. Setup shared by the whole workspace is the system's: `docs/development.md` |
 | `INF` | The system. Optional. A project adds its own only for infrastructure nothing else uses | `docs/infrastructure.md`; `projects/<project>/docs/infrastructure.md` |
 | `AD`, `OI` | The system. They are logs of entries. A component keeps its own only for entries that affect nothing outside it | `docs/decisions.md` and `docs/open-items.md`; `<component>/decisions.md`, `<component>/open-items.md` |
+| `PI` | The system. A project keeps its own only for increments that touch nothing outside it ([Product increments](#product-increments)) | `docs/increments.md` and `docs/increments/<increment>.md`; `projects/<project>/docs/increments.md` |
 
 A component's `OPS` links to `INF` for hosts, networks and ports and to `DEV` for everyday commands; it never repeats them.
 
@@ -78,6 +140,8 @@ Every workspace that follows the standard has the same root. Code is grouped by 
 │   ├── requirements.md            the system's documents, one per type
 │   ├── architecture.md
 │   ├── architecture/              sub-documents of architecture.md
+│   ├── increments.md              index of the product increments
+│   ├── increments/                one document per product increment
 │   └── decisions.md  open-items.md
 ├── projects/                      one folder per project
 │   └── <project>/
@@ -110,7 +174,7 @@ Every workspace that follows the standard has the same root. Code is grouped by 
 
 **Naming.** A component's name is the name of its code folder: `gateway` has its code in `projects/sensor/gateway/`, its documents in `projects/sensor/docs/gateway/` and the id `home/sensor/gateway`. The name is unique within its project only; the full id makes it unique in the system, so it does not repeat the project. Components of one kind may share a grouping folder (`projects/sensor/adapters/<name>/` -> `adapter-<name>`). A package's name is its folder name. The manifest's `code` field is authoritative where a project deviates.
 
-**Reserved names.** A project, component or module is never named like a document type's file or folder (`requirements`, `architecture`, `interfaces`, `design`, `ux`, `security`, `operations`, `hardware`, `verification`, `development`, `infrastructure`, `decisions`, `open-items`), nor `guides` or `packages`.
+**Reserved names.** A project, component or module is never named like a document type's file or folder (`requirements`, `architecture`, `interfaces`, `design`, `ux`, `security`, `operations`, `hardware`, `verification`, `development`, `infrastructure`, `decisions`, `open-items`, `increments`), nor `guides` or `packages`.
 
 **Promotion.** When a second project needs code from a project, that code moves to `packages/` and becomes a `library` component with its own `IFC`. Projects never import from each other's folders.
 
@@ -156,8 +220,8 @@ The system is a component with profile `system` and follows the same rules as ev
 | Rule | Detail |
 | --- | --- |
 | Location | `docs/`. `docs/README.md` is the system manifest and at the same time the index of the projects and packages (L0) |
-| Documents | `requirements.md` (purpose, goals, constraints), `architecture.md` with its sub-documents (building blocks, integration, repository layout), optionally `infrastructure.md`, `development.md` and `security.md`, and the system-wide logs `decisions.md` and `open-items.md` |
-| Planned work | One of its documents holds the overview of all planned changes ([Planned work](#planned-work)) |
+| Documents | `requirements.md` (purpose, goals, constraints), `architecture.md` with its sub-documents (building blocks, integration, repository layout), `increments.md` with one sub-document per product increment, optionally `infrastructure.md`, `development.md` and `security.md`, and the system-wide logs `decisions.md` and `open-items.md` |
+| Planned work | `increments.md` holds the overview of the open increments; each increment holds the graph of its changes ([Planned work](#planned-work)) |
 | Verification | System requirements are met by components: each is traced to the component requirements that implement it, and those have the `VER` rows. A system `VER` exists only for checks that span projects |
 
 ## Progressive disclosure
@@ -252,13 +316,14 @@ Every document starts with YAML front matter. It is the machine-readable part: i
 | `title` | Every document | The title ([Titles and file names](#titles-and-file-names)) |
 | `type` | Every document | The document type code (`REQ`, `IFC`, ...); a sub-document has the type of its type document. Others: `manifest`, `index` |
 | `owner` | Every document | Full id of the component, project or system the document belongs to |
-| `standard` | System manifest, project index | The standard and version the documents conform to: `formulary/0.1` ([Conformance](#conformance)) |
+| `standard` | System manifest, project index | The standard and version the documents conform to: `formulary/0.2` ([Conformance](#conformance)) |
 | `status` | Every document but indexes | `Draft` or `Accepted`; in a manifest `draft`, `active` or `deprecated` |
 | `version` | `IFC` | The semantic version of the contract. It changes with the contract, not with the wording |
 | `date` | Every document | Date of the last change to the content, `YYYY-MM-DD`. Not a history; the history is in version control |
 | `depends` | Documents | Full ids of the documents this one is derived from. A change to one of them may require a change here, and they are read first |
 | `related` | Documents | Full ids of documents worth reading alongside, with no derivation either way |
 | `planned` | Documents | The planned changes the document specifies, with their dependencies ([Planned work](#planned-work)). `[]` when there are none |
+| `includes` | `PI` | Full ids of planned changes specified in component documents that belong to this increment ([Product increments](#product-increments)). `[]` when there are none |
 | `profile`, `summary`, `code` | Manifest | Explained in [component.md](templates/component.md) |
 | `documents` | Manifest | Full ids of the component's type documents. Sub-documents are listed by their type document |
 | `depends` | Manifest | Full ids of the components whose interface this one uses. Together the manifests give the component graph |
@@ -292,7 +357,7 @@ planned:
 
 ## Writing rules
 
-- **Descriptive.** Write what exists, what it does and what its contract is, in the present tense. Do not write task lists, journals or dated plan files. The one history kept in a document is the change table of an `IFC`.
+- **Descriptive.** Write what exists, what it does and what its contract is, in the present tense. Do not write task lists, journals or dated plan files. The one history kept in a document is the change table of an `IFC`. A `PI` describes a target state in the same way, and it is removed once that state is built ([Product increments](#product-increments)).
 - **One fact, one place.** Link to a fact; never restate it. Requirements belong in `REQ`, contracts in `IFC`, rationale in `AD`.
 - **Testable.** Every requirement has an acceptance criterion and at least one row in `VER`. A requirement that modules meet together has a `trace` row naming their requirements ([Modules](#modules)). System requirements are traced to component requirements in the same way (see [System documents](#system-documents)).
 - **EARS for requirements.** `The <component> shall <response>.` / `When <trigger>, the <component> shall <response>.` / `While <state>, ...` / `If <unwanted condition>, then ...`
@@ -319,7 +384,7 @@ flowchart LR
    - **Slices**: independently shippable steps, in order. Finished slices are recorded in the entry's `done` list.
    - **Done when**: observable checks, which become `VER` rows.
 
-   Unresolved questions become `OI` entries and choices become `AD` entries.
+   A change that spans projects, or a set of changes that together deliver one feature set, is a product increment: it gets a `PI` document ([Product increments](#product-increments)). Unresolved questions become `OI` entries and choices become `AD` entries.
 4. **Review.** The spec change is reviewed on its own merits. A change that fits one PR is reviewed in that PR, together with the code. A larger change merges first, as a **Planned** section, and the code follows slice by slice.
 5. **Implement.** Tests name the requirement they verify (the full id in a comment, or the local id `FR-012` in the test name). Each PR that implements a slice also carries the spec edits that slice makes true; code never lands ahead of its spec.
 6. **Finish.** With the last slice, remove the **Planned** marker and rewrite the section descriptively. Set the `VER` rows to their test and status, and close the `OI` entries it resolved.
@@ -332,15 +397,29 @@ Planned changes form a dependency graph, not a roadmap: there are no dates and n
 
 | Rule | Detail |
 | --- | --- |
-| Node | One planned change: an entry under `planned` in the front matter of the document that specifies it, plus the **Planned** section in that document with its slices. Its id is `<system>/P-NN` when it spans projects (it is then specified in the system documents) and `<component id>/P-NN` otherwise |
+| Node | One planned change: an entry under `planned` in the front matter of the document that specifies it, plus the **Planned** section in that document with its slices. Its id is `<system>/P-NN` when it spans projects (it is then specified in a system `PI`) and `<component id>/P-NN` otherwise |
 | Entry | `id` (full id), `title`, `depends`, and optionally `priority` (`must`, `should`, `could`) and `done` (the numbers of the finished slices) |
 | Edge | `depends`: the full ids of the changes that must be done first, `[]` for none. Dependencies are stated there and nowhere else; the text does not repeat them |
 | Anchor | The section carries `**Planned** P-03` on the line below its heading. A table row the change will build carries it in its id cell: `FR-014 **Planned** P-03` |
 | State | Derived, never stored. *Done*: entry and marker removed. *In progress*: `done` is not empty. *Ready*: no id in `depends` is still an open entry. *Blocked*: anything else |
 | Order | Any ready change may start |
-| Overview | The system documents hold one table or Mermaid graph of all open changes. It is a view of the front matter: generated by `tools/` where a generator exists, kept by hand until then |
+| Overview | `docs/increments.md` lists the open increments and the graph between them; each `PI` holds the table and Mermaid graph of its own changes. Both are views of the front matter: generated by `tools/` where a generator exists, kept by hand until then |
 | Ids | Never reused. A finished change leaves the graph and is removed from the `depends` lists that named it; an id in `depends` that matches no entry is an error |
 | Not in the graph | Intent that is not specified yet. It stays an `OI` entry until someone writes the **Planned** section |
+
+## Product increments
+
+The system evolves through product increments. A product increment is a set of features the system gains together: new behaviour, a new component, a restructuring. Its `PI` document says what the increment delivers and which planned changes deliver it. The type documents (`REQ`, `ARCH`, `IFC`, ...) describe the system as it is; a `PI` describes one step from there to a target.
+
+| Rule | Detail |
+| --- | --- |
+| Owner | The system: `docs/increments/<increment>.md`, id `<system>/increments/<increment>`. A project keeps its own `increments.md` only for increments that touch nothing outside it |
+| Index | `increments.md` lists every open increment, one line each, with the graph between them. An increment that builds on another names it under `depends` in its front matter |
+| Content | Goal (what the system can do afterwards, and the system goals and requirements it serves), scope (its features and what is left out), the target state, and its planned work ([increment.md](templates/increments/increment.md)) |
+| Changes | The increment's own changes (`<system>/P-NN`) are declared under `planned` in its front matter and specified in its sections. A feature wholly inside one component stays a **Planned** section of that component's document; the increment names that change under `includes` |
+| One fact, one place | A target that a type document will describe once built (a requirement, a contract, a layout) is written in the `PI` only while it is planned. The slice that builds it moves it into the type document |
+| State | Derived, never stored. *Open*: at least one change under `planned` or `includes` is still an open entry. *Done*: none is. A done increment is removed from the index and its file is deleted; it remains in version control |
+| Status | `Draft` until the increment is reviewed and accepted as a whole, then `Accepted` |
 
 ## Conformance
 
@@ -353,7 +432,7 @@ Planned changes form a dependency graph, not a roadmap: there are no dates and n
 
 ## For agents
 
-- Take work from the planned-work graph: only changes that are ready.
+- Take work from the planned-work graph: only changes that are ready. Start at `docs/increments.md` to see which increments are open.
 - Refer to every artifact by its full id.
 - Go down the levels: project index -> component manifest -> documents. Load only what the task needs.
 - Find what else to read from front matter: `depends` and `related` of the document, `depends` and `implements` of the manifest.

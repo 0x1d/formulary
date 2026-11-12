@@ -3,13 +3,13 @@ id: <system>
 title: <System>
 type: manifest
 owner: <system>
-standard: formulary/0.1
+standard: formulary/0.2
 profile: system
 status: draft
 summary: <one sentence: what the system is>
 code: .
 depends: []
-documents: [<system>/requirements, <system>/architecture, <system>/decisions, <system>/open-items]
+documents: [<system>/requirements, <system>/architecture, <system>/increments, <system>/decisions, <system>/open-items]
 date: YYYY-MM-DD
 ---
 
@@ -24,6 +24,7 @@ date: YYYY-MM-DD
 | --- | --- |
 | [requirements.md](requirements.md) | Purpose, goals, constraints |
 | [architecture.md](architecture.md) | How the projects fit together |
+| [increments.md](increments.md) | Product increments: how the system evolves, and the planned work |
 | [decisions.md](decisions.md) | Decisions `<system>/AD-NN` |
 | [open-items.md](open-items.md) | Open items `<system>/OI-NN` |
 
