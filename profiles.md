@@ -26,7 +26,7 @@ R = required (at least one document of the type), O = optional (add it when it h
 - (4) Mapping between the external system's interface and ours: concepts, messages, errors, unsupported features.
 - (5) Only for checks that span projects. System requirements are otherwise traced to the component requirements that implement them. The system's documents are in `docs/` ([README.md](README.md#system-documents)).
 
-Five document types are outside the required sets: `DEV` (one per project), `INF` (system level), the `AD` and `OI` logs (system level; a component keeps its own, in `decisions.md` and `open-items.md`, only for entries that affect nothing outside it), and the product increments `PI` (system level; a project keeps its own only for increments that touch nothing outside it). See [Document types](README.md#document-types).
+Six document types are outside the required sets: `DEV` (one per project), `INF` (system level), the `AD` and `OI` logs (system level; a component keeps its own, in `decisions.md` and `open-items.md`, only for entries that affect nothing outside it), and the product increments `PI` (system level; a project keeps its own only for increments that touch nothing outside it), and the proposals `PRP` (system level; a project keeps its own only for proposals that touch nothing outside it). See [Document types](README.md#document-types).
 
 ## Choosing a profile
 

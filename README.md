@@ -1,6 +1,6 @@
 ---
 title: Formulary
-version: 0.2.0
+version: 0.2.1
 status: Draft
 date: 2026-11-12
 ---
@@ -87,6 +87,7 @@ flowchart TB
 | **Document type** | A fixed kind of document with a code (`REQ`, `ARCH`, ...) and a template |
 | **Manifest** | The component's `README.md`: front matter stating id, profile, status, dependencies and documents |
 | **Product increment** | A set of features the system gains together. The system evolves through product increments; each is specified in a `PI` document before it is built ([Product increments](#product-increments)) |
+| **Proposal** | A suggested change or new component, written before it is specified. It is a `PRP` document; once accepted, its content moves into the documents that specify it ([Proposals](#proposals)) |
 | **Item** | A numbered entry inside a document: requirement, decision, open item, interface message |
 
 ## Document types
@@ -107,16 +108,17 @@ flowchart TB
 | `AD` | `decisions.md` | `decisions/` | Why it is this way | [decisions.md](templates/decisions.md) |
 | `OI` | `open-items.md` | `open-items/` | What is unresolved | [open-items.md](templates/open-items.md) |
 | `PI` | `increments.md` | `increments/` | How it evolves: which features it gains next | [increments.md](templates/increments.md), [increment.md](templates/increments/increment.md) |
+| `PRP` | `proposals.md` | `proposals/` | What we suggest changing, before it is specified | [proposals.md](templates/proposals.md), [proposal.md](templates/proposals/proposal.md) |
 
 | Rule | Detail |
 | --- | --- |
 | One document per type | An owner has at most one document of each type, named after the type: `architecture.md`. While the subject fits in one file, that file is the whole document |
 | Sub-documents | When the document grows, parts move into sub-documents in the folder of the same name (`architecture/integration.md`). The type document keeps the summary and links every sub-document: it becomes their index. The folder exists only once there is a sub-document |
 | One level | Sub-documents have no sub-documents. A part that needs more is a module ([Modules](#modules)) |
-| Always split | `interfaces.md`, `hardware.md` and `increments.md` are indexes from the start. Every interface contract, every board and every product increment is a sub-document (`interfaces/http-api.md`, `hardware/<board>.md`, `increments/<increment>.md`), because each has its own version, data sheet or life span and a second one is always possible |
+| Always split | `interfaces.md`, `hardware.md`, `increments.md` and `proposals.md` are indexes from the start. Every interface contract, every board, every product increment and every proposal is a sub-document (`interfaces/http-api.md`, `hardware/<board>.md`, `increments/<increment>.md`, `proposals/<proposal>.md`), because each has its own version, data sheet or life span and a second one is always possible |
 | The code | `REQ`, `ARCH`, ... is the short name of the type. It is the `type` in front matter and is used in the profile tables and in text. It does not appear in ids or file names |
 
-**Scope.** `REQ` to `VER` belong to a component and form the required sets ([profiles](profiles.md)). The other five do not:
+**Scope.** `REQ` to `VER` belong to a component and form the required sets ([profiles](profiles.md)). The other six do not:
 
 | Code | Belongs to | Lives in |
 | --- | --- | --- |
@@ -124,6 +126,7 @@ flowchart TB
 | `INF` | The system. Optional. A project adds its own only for infrastructure nothing else uses | `docs/infrastructure.md`; `projects/<project>/docs/infrastructure.md` |
 | `AD`, `OI` | The system. They are logs of entries. A component keeps its own only for entries that affect nothing outside it | `docs/decisions.md` and `docs/open-items.md`; `<component>/decisions.md`, `<component>/open-items.md` |
 | `PI` | The system. A project keeps its own only for increments that touch nothing outside it ([Product increments](#product-increments)) | `docs/increments.md` and `docs/increments/<increment>.md`; `projects/<project>/docs/increments.md` |
+| `PRP` | The system. A project keeps its own only for proposals that touch nothing outside it ([Proposals](#proposals)) | `docs/proposals.md` and `docs/proposals/<proposal>.md`; `projects/<project>/docs/proposals.md` |
 
 A component's `OPS` links to `INF` for hosts, networks and ports and to `DEV` for everyday commands; it never repeats them.
 
@@ -174,7 +177,7 @@ Every workspace that follows the standard has the same root. Code is grouped by 
 
 **Naming.** A component's name is the name of its code folder: `gateway` has its code in `projects/sensor/gateway/`, its documents in `projects/sensor/docs/gateway/` and the id `home/sensor/gateway`. The name is unique within its project only; the full id makes it unique in the system, so it does not repeat the project. Components of one kind may share a grouping folder (`projects/sensor/adapters/<name>/` -> `adapter-<name>`). A package's name is its folder name. The manifest's `code` field is authoritative where a project deviates.
 
-**Reserved names.** A project, component or module is never named like a document type's file or folder (`requirements`, `architecture`, `interfaces`, `design`, `ux`, `security`, `operations`, `hardware`, `verification`, `development`, `infrastructure`, `decisions`, `open-items`, `increments`), nor `guides` or `packages`.
+**Reserved names.** A project, component or module is never named like a document type's file or folder (`requirements`, `architecture`, `interfaces`, `design`, `ux`, `security`, `operations`, `hardware`, `verification`, `development`, `infrastructure`, `decisions`, `open-items`, `increments`, `proposals`), nor `guides` or `packages`.
 
 **Promotion.** When a second project needs code from a project, that code moves to `packages/` and becomes a `library` component with its own `IFC`. Projects never import from each other's folders.
 
@@ -357,7 +360,7 @@ planned:
 
 ## Writing rules
 
-- **Descriptive.** Write what exists, what it does and what its contract is, in the present tense. Do not write task lists, journals or dated plan files. The one history kept in a document is the change table of an `IFC`. A `PI` describes a target state in the same way, and it is removed once that state is built ([Product increments](#product-increments)).
+- **Descriptive.** Write what exists, what it does and what its contract is, in the present tense. Do not write task lists, journals or dated plan files. The one history kept in a document is the change table of an `IFC`. A `PI` describes a target state in the same way, and it is removed once that state is built ([Product increments](#product-increments)). A `PRP` describes a suggested state in the same way, and it is removed once accepted or rejected ([Proposals](#proposals)).
 - **One fact, one place.** Link to a fact; never restate it. Requirements belong in `REQ`, contracts in `IFC`, rationale in `AD`.
 - **Testable.** Every requirement has an acceptance criterion and at least one row in `VER`. A requirement that modules meet together has a `trace` row naming their requirements ([Modules](#modules)). System requirements are traced to component requirements in the same way (see [System documents](#system-documents)).
 - **EARS for requirements.** `The <component> shall <response>.` / `When <trigger>, the <component> shall <response>.` / `While <state>, ...` / `If <unwanted condition>, then ...`
@@ -420,6 +423,20 @@ The system evolves through product increments. A product increment is a set of f
 | One fact, one place | A target that a type document will describe once built (a requirement, a contract, a layout) is written in the `PI` only while it is planned. The slice that builds it moves it into the type document |
 | State | Derived, never stored. *Open*: at least one change under `planned` or `includes` is still an open entry. *Done*: none is. A done increment is removed from the index and its file is deleted; it remains in version control |
 | Status | `Draft` until the increment is reviewed and accepted as a whole, then `Accepted` |
+
+## Proposals
+
+A proposal suggests a change or a new component before it is specified. Its `PRP` document says what is proposed, why, and which documents it would change. It is a draft for discussion: the type documents and the `PI` documents stay the source of truth, and nothing is built from a proposal.
+
+| Rule | Detail |
+| --- | --- |
+| Owner | The system: `docs/proposals/<proposal>.md`, id `<system>/proposals/<proposal>`. A project keeps its own `proposals.md` only for proposals that touch nothing outside it |
+| Index | `proposals.md` lists every open proposal, one line each |
+| Content | Motivation (the problem and the goals or requirements it serves), the proposal itself, the documents it would change, alternatives considered, and its open questions ([proposal.md](templates/proposals/proposal.md)) |
+| Open questions | Live in the `OI` log, not in the proposal. The proposal refers to them by full id (`home/OI-07`) and does not repeat them |
+| Accepted | The content moves into the documents that specify it: the type documents, as **Planned** sections, or a `PI` when it is a product increment. Choices made become `AD` entries. Then the proposal is removed from the index and its file is deleted; it remains in version control |
+| Rejected | The reason becomes an `AD` entry, and the proposal is removed from the index and its file deleted |
+| Status | Always `Draft`. A proposal is never `Accepted`: accepting it moves its content and ends it |
 
 ## Conformance
 
